@@ -13,9 +13,17 @@ type NLI struct {
 	Type    string
 }
 
+type ASR struct {
+	Result       string
+	SpeechStatus int `json:"speech_status"`
+	Final        bool
+	Status       int
+}
+
 type NLUResult struct {
 	NLI []NLI  `json:"nli,omitempty"`
 	SEG string `json:"seg,omitempty"`
+	ASR ASR    `json:"asr,omitempty"`
 }
 
 type Result struct {

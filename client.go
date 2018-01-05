@@ -1,15 +1,10 @@
 package golami
 
 import (
-	"bytes"
 	"context"
-	"crypto/md5"
 	"errors"
-	"fmt"
-	"log"
 	"net/http"
 	"net/url"
-	"time"
 )
 
 // constants
@@ -19,6 +14,7 @@ const (
 
 	APIServiceSEG = "seg"
 	APIServiceNLI = "nli"
+	APIServiceASR = "asr"
 )
 
 // Client type
@@ -92,41 +88,13 @@ func (client *Client) do(ctx context.Context, req *http.Request) (*http.Response
 
 }
 
-func (client *Client) Post(ctx context.Context, service, text string) (*http.Response, error) {
-	// get timestamp
-	timeStamp := time.Now().Local().UnixNano() / int64(time.Millisecond)
-	log.Printf("timestamp: %d\n", timeStamp)
-
-	//  Prepare message to generate an MD5 digest.
-	signMsg := fmt.Sprintf("%sapi=%sappkey=%stimestamp=%d%s",
-		client.appSecret, service, client.appKey, timeStamp, client.appSecret,
-	)
-
-	// Generate MD5 digest.
-	sign := fmt.Sprintf("%x", md5.Sum([]byte(signMsg)))
-
-	// Prepare rq JSON data
-	var rq string
-	var apiName string
-	switch service {
-	case APIServiceSEG:
-		rq = text
-		apiName = APIServiceSEG
-	case APIServiceNLI:
-		rq = fmt.Sprintf(`{"data_type":"stt","data":{"input_type":"1","text":"%s"}}`, text)
-		apiName = APIServiceNLI
-	}
-
-	// Assemble all the HTTP parameters you want to send
-	body := bytes.NewBufferString(fmt.Sprintf("api=%s&appkey=%s&timestamp=%d&sign=%s&rq=%s",
-		apiName, client.appKey, timeStamp, sign, rq,
-	))
-
-	req, err := http.NewRequest("POST", client.url(), body)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
+func (client *Client) get(ctx context.Context, query url.Values) (*http.Response, error) {
+	req, err := http.NewRequest("GET", client.url(), nil)
 	if err != nil {
 		return nil, err
+	}
+	if query != nil {
+		req.URL.RawQuery = query.Encode()
 	}
 	return client.do(ctx, req)
 }
