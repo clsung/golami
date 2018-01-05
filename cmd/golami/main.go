@@ -26,7 +26,13 @@ func main() {
 	}
 	var r *golami.Result
 	if service == "asr" {
-		r, err = c.PostASR(context.Background(), text)
+		// file stream
+		file, err := os.Open(text)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer file.Close()
+		r, err = c.PostASR(context.Background(), file)
 	} else {
 		r, err = c.PostText(context.Background(), service, text)
 	}

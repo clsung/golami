@@ -6,10 +6,10 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/http/cookiejar"
-	"os"
 	"time"
 )
 
@@ -63,7 +63,7 @@ func (client *Client) PostText(ctx context.Context, service, text string) (*Resu
 	return r, nil
 }
 
-func (client *Client) PostASR(ctx context.Context, filePath string) (*Result, error) {
+func (client *Client) PostASR(ctx context.Context, r io.Reader) (*Result, error) {
 	// get timestamp
 	timeStamp := time.Now().Local().UnixNano() / int64(time.Millisecond)
 	log.Printf("timestamp: %d\n", timeStamp)
@@ -76,14 +76,8 @@ func (client *Client) PostASR(ctx context.Context, filePath string) (*Result, er
 	// Generate MD5 digest.
 	sign := fmt.Sprintf("%x", md5.Sum([]byte(signMsg)))
 
-	// file stream
-	file, err := os.Open(filePath)
-	if err != nil {
-		return nil, err
-	}
-
 	client.httpClient.Jar, _ = cookiejar.New(nil)
-	req, err := http.NewRequest("POST", client.url(), file)
+	req, err := http.NewRequest("POST", client.url(), r)
 	req.Header.Set("Content-Type", "application/octet-stream")
 	// Generate QueryString
 	q := req.URL.Query()
